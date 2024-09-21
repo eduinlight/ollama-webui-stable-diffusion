@@ -1,0 +1,59 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ./ollama:/root/.ollama
+    ports:
+      - 11434:11434
+    restart: unless-stopped
+    networks:
+      - ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  ollama-webui:
+    image: ollama-webui:latest
+    container_name: ollama-webui
+    build:
+      context: ./open-webui/
+      args:
+        OLLAMA_API_BASE_URL: '/ollama/api'
+      dockerfile: Dockerfile
+    depends_on:
+      - ollama
+    ports:
+      - 3000:8080
+    environment:
+      - "OLLAMA_API_BASE_URL=http://ollama:11434/api"
+    restart: unless-stopped
+    networks:
+      - ollama
+
+  stable-diffusion:
+    image: goolashe/automatic1111-sd-webui
+    container_name: stable-diffusion
+    networks:
+      - ollama
+    restart: unless-stopped
+    environment:
+      # - CLI_ARGS=--no-half --precision full --allow-code --enable-insecure-extension-access --api
+      - CLI_ARGS=--no-half --allow-code --medvram --xformers --enable-insecure-extension-access --api
+    ports:
+      - 4000:7860
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+networks:
+  ollama:
+    name: ollama

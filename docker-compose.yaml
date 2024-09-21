@@ -27,10 +27,16 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - ollama
+      - stable-diffusion
     ports:
       - 3000:8080
     environment:
-      - "OLLAMA_API_BASE_URL=http://ollama:11434/api"
+      - ENABLE_OLLAMA_API=true
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - ENABLE_IMAGE_GENERATION=true
+      - AUTOMATIC1111_BASE_URL=http://stable-diffusion:7860
+      - IMAGE_SIZE=800x600
+      - IMAGE_STEPS=3
     restart: unless-stopped
     networks:
       - ollama
@@ -42,8 +48,10 @@ services:
       - ollama
     restart: unless-stopped
     environment:
-      # - CLI_ARGS=--no-half --precision full --allow-code --enable-insecure-extension-access --api
       - CLI_ARGS=--no-half --allow-code --medvram --xformers --enable-insecure-extension-access --api
+      - PYTHONUNBUFFERED="1"
+      - TERM="vt100"
+      - SD_WEBUI_VARIANT="default"
     ports:
       - 4000:7860
     deploy:
